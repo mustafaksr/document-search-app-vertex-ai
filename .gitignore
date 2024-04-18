@@ -1,0 +1,12 @@
+Search-and-Conversations.ipynb
+*.ipynb
+*.json
+node_modules
+.ipynb_checkpoints
+webapp/server.js
+webapp/public
+webapp (Copy)
+webapp/__pycache__
+*.pdf
+*.env
+*.swp
