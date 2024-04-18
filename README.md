@@ -16,7 +16,13 @@ Before running the application, ensure you have the following:
 
 ## Setup
 
-0. **Create Search and Conversation App:** 
+0. **Create Google Cloud Storage Bucket:** Create a gcs bucket for search and conversation app.
+
+    ```bash
+    gsutil mb gs://"your-bucket-name"
+    ```
+
+1. **Create Search and Conversation App:** 
 
         1. Go to Agent Builder from google cloud console.
         2. Pick Search app
@@ -29,31 +35,30 @@ Before running the application, ensure you have the following:
         9. Note your data store id and app engine id to your .env file.
 
 
-1. **Clone the Repository:** Clone this repository to your local machine.
+2. **Clone the Repository:** Clone this repository to your local machine.
 
     ```bash
     git clone https://github.com/mustafaksr/document-search-app-vertex-ai.git
     ```
 
-2. **Install Dependencies:** Navigate to the project directory and install the Python dependencies.
+3. **Install Dependencies:** Navigate to the project directory and install the Python dependencies.
 
     ```bash
     cd document-search-app-vertex-ai
     pip install -r requirements.txt
     ```
     
-
-3. **Set Up Environment Variables:** Create a `.env` file in the root directory and populate it with your GCP project ID, location, engine ID, and data store ID.
+4. **Set Up Environment Variables:** Create a `.env` file in the root directory and populate it with your GCP project ID, location, engine ID, and data store ID.
 
     ```plaintext
     export project_id='your-project-id'
     export location='your-location'  
     export engine_id='your-engine-id'
     export data_store_id='your-data-store-id'
-    export bucket_name='your bucket name'
+    export bucket_name='your-bucket-name'
     ```
 
-4. **Run the Application:** Start the Flask web server.
+5. **Run the Application:** Start the Flask web server.
 
     ```bash
     python webapp/app.py
@@ -61,7 +66,7 @@ Before running the application, ensure you have the following:
 
     
 
-5. **Access the Web App:** Open a web browser and navigate to `http://localhost:5000` to access the search and conversation app. Using Front-end, Add document GCS then store it data store and start search within documents using search widget.
+6. **Access the Web App:** Open a web browser and navigate to `http://localhost:5000` to access the search and conversation app. Using Front-end, Add document GCS then store it data store and start search within documents using search widget.
 
 
 
