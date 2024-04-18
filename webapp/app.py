@@ -146,8 +146,8 @@ def upload():
 
 @app.route('/list_documents_gcs', methods=['POST'])
 def list_blobs():
-    project_id = PROJECT_ID
-    bucket_name = project_id
+    
+    bucket_name = BUCKET_NAME
     document_uris = list_blobs_bucket(bucket_name)
     document_uris = [f"Total documents counts in bucket : {len(document_uris)}"] + document_uris
     return jsonify(document_uris)
