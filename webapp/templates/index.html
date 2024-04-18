@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+    <title>Document Search and Synthesis App</title>
+    <!-- <script src="{{ url_for('static', filename='js/widget_bundle.js') }}"></script> -->
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        textarea {
+            width: calc(100% - 40px);
+            padding: 12px 20px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            resize: vertical; /* Allow vertical resizing */
+            min-height: 100px; /* Set a minimum height */
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        input {
+            width: calc(50% - 40px);
+            padding: 12px 20px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            /* resize: vertical; /* Allow vertical resizing */
+            min-height: 50px; /* Set a minimum height */
+            max-height: 50px; /* Set a maximum height */
+            max-width: 260px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .adjust {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        button[type="submit"] {
+            padding: 12px 20px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .search-result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .search-result h2 {
+            color: #333;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            background-color: black;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            width: 200px; /* Adjust as needed */
+            left: 50%;
+            bottom: 125%;
+            transform: translateX(-50%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .tooltip:hover::after {
+            opacity: 0.75;
+            visibility: visible;
+        }
+        #searchWidgetTrigger{
+            width: 300px;
+        }
+        hr {
+            padding: 1px;
+            border-radius: 5px;
+            background-color:antiquewhite;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <hr>
+        
+        <div><h1>Document Search and Synthesis App</h1></div>
+        <hr>
+        <div>
+            <form id="uploadForm" enctype="multipart/form-data" action="/upload" method="post">
+                <label class="tooltip" data-tooltip="Click to choose files to upload documents to the GCS bucket" for="files">Upload Documents to GCS:</label><br>
+                <input type="file" id="files" rows="4" cols="25" name="files" accept=".pdf,.doc,.docx,.txt" multiple>
+                <button class="tooltip" id="upload_docs" type="submit" data-tooltip="Uploads documents to the GCS bucket" title="Uploads documents to the GCS bucket">Submit</button>
+            </form>
+            <button class="tooltip" id="list_docs_bucket" type="submit" data-tooltip="It lists documents within GCS bucket, you can see list in Logs:." title="Lists documents.">List Documents GCS</button>
+            
+        </div>
+        
+        <hr>
+
+
+        <div>
+            <label class="tooltip" data-tooltip="Enter gcs uris as one per line like gs://bucket/folder/example.pdf" for="gcs_uris">Enter GCS URIs (up to 100, one per line):</label><br>
+            <textarea  id="gcs_uris" rows="4" cols="50" ></textarea>
+        </div>
+        <div>
+            <button class="tooltip" id="add_docs" type="submit" data-tooltip="Imports Entered GCS URIs in text area to the store. Max 100 documents each time." title="Imports Entered GCS URIs in text area to the store.">Add Documents</button>
+            <button class="tooltip" id="list_docs" type="submit" data-tooltip="It lists documents in the store, max 100 documents but you can import more than 100 documents." title="Lists documents.">List Documents Store</button>
+            <button class="tooltip" id="remove_docs" type="submit" data-tooltip="Deletes all documents in the store." title="Deletes all documents in store.">Purge Documents</button>
+        </div>
+
+        <hr>
+        
+
+        <label for="response" class="tooltip" data-tooltip="Results will be printed here.">Logs:</label><br>
+        <textarea  id="response" rows="2" cols="50" readonly>{{ response }}</textarea> <!-- Text area for response -->
+            
+
+        <hr>
+        <div>
+        <!-- ############################################################# -->
+
+        <!-- Widget JavaScript bundle -->
+        <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"></script>
+
+        <!-- Search widget element is not visible by default -->
+        <gen-search-widget
+        configId="a2511b0b-6e92-4c63-9819-ceddf00fdc4b"
+        triggerId="searchWidgetTrigger">
+        </gen-search-widget>
+
+        <!-- Element that opens the widget on click. It does not have to be an input -->
+        <label for="searchWidgetTrigger" class="tooltip" data-tooltip="Click to Activate Widget. Then you can search query within uploaded documents." id="widgetLabel">
+        <input placeholder="Click here to Search ..." id="searchWidgetTrigger"  />
+        <!-- ############################################################# -->
+
+
+        <!-- <form action="/search" method="POST">
+            <label for="query">Enter your query:</label><br>
+            <textarea id="query" name="query" rows="4">{{ query }}</textarea>
+            <button type="submit">Search</button>
+        </form>
+
+        {% if summary_text %}
+        <div class="search-result">
+            <h2>Search Result</h2>
+            <p>{{ summary }}</p>
+            <hr>
+            <h2>Search Result with References</h2>
+            <p>{{ summary_text }}</p>
+            <ul class="citation-list">
+                {% for citation in citations %}
+                <li>{{ citation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %} -->
+        </div>
+        
+        <hr>
+    </div>
+
+    
+
+
+
+    <!-- <script>// Set authorization token.
+
+        const searchWidget = document.querySelector('gen-search-widget');
+        searchWidget.authToken = "<JWT or OAuth token provided by your backend>";
+        
+    </script> -->
+
+    <script>
+        // JavaScript function to handle purging documents
+        document.getElementById('remove_docs').addEventListener('click', function() {
+            // Call your function to purge documents
+            purgeDocuments();
+        });
+    
+        function purgeDocuments() {
+            fetch('/purge_documents', {
+                method: 'POST',
+                body: JSON.stringify({}), // You may need to pass any parameters here
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.text()) // Get response as text
+            .then(data => {
+                // Show response in textarea
+                document.getElementById('response').value = data;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+    
+    <script>
+        // JavaScript function to handle adding documents
+        document.getElementById('add_docs').addEventListener('click', function() {
+            // Call your function to add documents
+            addDocuments();
+        });
+    
+        function addDocuments() {
+            // Get the value of the input field containing the GCS URIs
+            var gcs_uris = document.getElementById('gcs_uris').value.split('\n');
+    
+            // Check if number of lines exceeds 100
+            if (gcs_uris.length > 100) {
+                alert('Maximum 100 GCS URIs allowed.');
+                return;
+            }
+    
+            fetch('/import_documents', {
+                method: 'POST',
+                body: JSON.stringify({gcs_uris: gcs_uris}),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show result in textarea
+                document.getElementById('response').value = data;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+    <script>
+    // JavaScript function to handle file upload
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the form from submitting in the traditional way
+
+        var form = event.target;
+        var formData = new FormData(form);
+
+        fetch(form.action, {
+            method: form.method,
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            // Show result in textarea
+            document.getElementById('response').value = data;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+<script>
+    // JavaScript function to handle listing documents in bucket
+    document.getElementById('list_docs_bucket').addEventListener('click', function() {
+        // Call your function to list documents
+        listDocumentsBucket();
+    });
+
+    function listDocumentsBucket() {
+        fetch('/list_documents_gcs', {
+            method: 'POST',
+            body: JSON.stringify({}), // You may need to pass any parameters here
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Show list of documents in textarea
+            document.getElementById('response').value = "Listed documents in bucket:\n" + data.join("\n");
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+<script>
+    // JavaScript function to handle listing documents in store
+    document.getElementById('list_docs').addEventListener('click', function() {
+        // Call your function to list documents
+        listDocuments();
+    });
+
+    function listDocuments() {
+        fetch('/list_documents', {
+            method: 'POST',
+            body: JSON.stringify({}), // You may need to pass any parameters here
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Show list of documents in textarea
+            document.getElementById('response').value = "Listed documents in store:\n" + data.join("\n");
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+</body>
+</html>
